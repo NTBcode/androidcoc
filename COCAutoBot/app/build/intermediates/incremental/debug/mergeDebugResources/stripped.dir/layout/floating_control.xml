@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:background="#AA000000"
+    android:orientation="vertical"
+    android:padding="8dp">
+
+    <!-- Header with Toggle Button -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="COC Bot"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold" />
+
+        <ImageButton
+            android:id="@+id/btnToggle"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_marginStart="8dp"
+            android:src="@android:drawable/ic_menu_more"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Toggle Menu" />
+    </LinearLayout>
+
+    <!-- Expandable Layout -->
+    <LinearLayout
+        android:id="@+id/expandedLayout"
+        android:layout_width="250dp"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <!-- Control Buttons -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="8dp">
+
+            <Button
+                android:id="@+id/btnStart"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Start" />
+
+            <Button
+                android:id="@+id/btnStop"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Stop" />
+        </LinearLayout>
+
+        <!-- Log View -->
+        <TextView
+            android:id="@+id/tvLog"
+            android:layout_width="match_parent"
+            android:layout_height="100dp"
+            android:background="#33FFFFFF"
+            android:textColor="#FFFFFF"
+            android:textSize="10sp"
+            android:padding="4dp"
+            android:scrollbars="vertical"
+            android:text="Log initialized..." />
+
+        <!-- Settings Section -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Settings"
+            android:textColor="#FFFFFF"
+            android:layout_marginTop="8dp"
+            android:textStyle="bold"/>
+
+        <EditText
+            android:id="@+id/etGoldThreshold"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Gold Threshold (e.g. 100000)"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#AAAAAA"
+            android:inputType="number"
+            android:textSize="12sp"/>
+
+        <EditText
+            android:id="@+id/etElixirThreshold"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Elixir Threshold"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#AAAAAA"
+            android:inputType="number"
+            android:textSize="12sp"/>
+
+        <EditText
+            android:id="@+id/etAttackDuration"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Attack Duration (seconds)"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#AAAAAA"
+            android:inputType="number"
+            android:textSize="12sp"/>
+
+        <CheckBox
+            android:id="@+id/cbResourceFilter"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Filter Resources"
+            android:textColor="#FFFFFF"/>
+
+        <CheckBox
+            android:id="@+id/cbWallUpgrade"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Auto Upgrade Walls"
+            android:textColor="#FFFFFF"/>
+
+        <Button
+            android:id="@+id/btnApplySettings"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Apply Settings" />
+
+    </LinearLayout>
+</LinearLayout>

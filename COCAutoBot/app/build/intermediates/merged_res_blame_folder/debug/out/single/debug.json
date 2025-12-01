@@ -1,0 +1,98 @@
+[
+    {
+        "merged": "C:\\Users\\abinh\\.gradle\\daemon\\8.5\\com.cocauto.app-merged_res-32:\\drawable_ic_notification.xml.flat",
+        "source": "C:\\Users\\abinh\\.gradle\\daemon\\8.5\\com.cocauto.app-main-34:\\drawable\\ic_notification.xml"
+    },
+    {
+        "merged": "C:\\Users\\abinh\\.gradle\\daemon\\8.5\\com.cocauto.app-merged_res-32:\\drawable_ic_launcher_foreground.xml.flat",
+        "source": "C:\\Users\\abinh\\.gradle\\daemon\\8.5\\com.cocauto.app-main-34:\\drawable\\ic_launcher_foreground.xml"
+    },
+    {
+        "merged": "C:\\Users\\abinh\\.gradle\\daemon\\8.5\\com.cocauto.app-merged_res-32:\\xml_accessibility_service_config.xml.flat",
+        "source": "C:\\Users\\abinh\\.gradle\\daemon\\8.5\\com.cocauto.app-main-34:\\xml\\accessibility_service_config.xml"
+    },
+    {
+        "merged": "com.cocauto.app-merged_res-32:/layout_floating_control.xml.flat",
+        "source": "com.cocauto.app-main-34:/layout/floating_control.xml"
+    },
+    {
+        "merged": "C:\\Users\\abinh\\.gradle\\daemon\\8.5\\com.cocauto.app-merged_res-32:\\mipmap-xxxhdpi_ic_launcher_round.webp.flat",
+        "source": "C:\\Users\\abinh\\.gradle\\daemon\\8.5\\com.cocauto.app-main-34:\\mipmap-xxxhdpi\\ic_launcher_round.webp"
+    },
+    {
+        "merged": "C:\\Users\\abinh\\.gradle\\daemon\\8.5\\com.cocauto.app-merged_res-32:\\layout_layout_target_overlay.xml.flat",
+        "source": "C:\\Users\\abinh\\.gradle\\daemon\\8.5\\com.cocauto.app-main-34:\\layout\\layout_target_overlay.xml"
+    },
+    {
+        "merged": "C:\\Users\\abinh\\.gradle\\daemon\\8.5\\com.cocauto.app-merged_res-32:\\mipmap-mdpi_ic_launcher.webp.flat",
+        "source": "C:\\Users\\abinh\\.gradle\\daemon\\8.5\\com.cocauto.app-main-34:\\mipmap-mdpi\\ic_launcher.webp"
+    },
+    {
+        "merged": "C:\\Users\\abinh\\.gradle\\daemon\\8.5\\com.cocauto.app-merged_res-32:\\mipmap-xxxhdpi_ic_launcher.webp.flat",
+        "source": "C:\\Users\\abinh\\.gradle\\daemon\\8.5\\com.cocauto.app-main-34:\\mipmap-xxxhdpi\\ic_launcher.webp"
+    },
+    {
+        "merged": "C:\\Users\\abinh\\.gradle\\daemon\\8.5\\com.cocauto.app-merged_res-32:\\mipmap-anydpi-v26_ic_launcher_round.xml.flat",
+        "source": "C:\\Users\\abinh\\.gradle\\daemon\\8.5\\com.cocauto.app-main-34:\\mipmap-anydpi-v26\\ic_launcher_round.xml"
+    },
+    {
+        "merged": "C:\\Users\\abinh\\.gradle\\daemon\\8.5\\com.cocauto.app-merged_res-32:\\drawable_ic_launcher_background.xml.flat",
+        "source": "C:\\Users\\abinh\\.gradle\\daemon\\8.5\\com.cocauto.app-main-34:\\drawable\\ic_launcher_background.xml"
+    },
+    {
+        "merged": "C:\\Users\\abinh\\.gradle\\daemon\\8.5\\com.cocauto.app-merged_res-32:\\mipmap-xhdpi_ic_launcher.webp.flat",
+        "source": "C:\\Users\\abinh\\.gradle\\daemon\\8.5\\com.cocauto.app-main-34:\\mipmap-xhdpi\\ic_launcher.webp"
+    },
+    {
+        "merged": "C:\\Users\\abinh\\.gradle\\daemon\\8.5\\com.cocauto.app-merged_res-32:\\mipmap-anydpi-v26_ic_launcher.xml.flat",
+        "source": "C:\\Users\\abinh\\.gradle\\daemon\\8.5\\com.cocauto.app-main-34:\\mipmap-anydpi-v26\\ic_launcher.xml"
+    },
+    {
+        "merged": "C:\\Users\\abinh\\.gradle\\daemon\\8.5\\com.cocauto.app-merged_res-32:\\mipmap-hdpi_ic_launcher_round.webp.flat",
+        "source": "C:\\Users\\abinh\\.gradle\\daemon\\8.5\\com.cocauto.app-main-34:\\mipmap-hdpi\\ic_launcher_round.webp"
+    },
+    {
+        "merged": "C:\\Users\\abinh\\.gradle\\daemon\\8.5\\com.cocauto.app-merged_res-32:\\layout_floating_control.xml.flat",
+        "source": "C:\\Users\\abinh\\.gradle\\daemon\\8.5\\com.cocauto.app-main-34:\\layout\\floating_control.xml"
+    },
+    {
+        "merged": "C:\\Users\\abinh\\.gradle\\daemon\\8.5\\com.cocauto.app-merged_res-32:\\mipmap-xxhdpi_ic_launcher.webp.flat",
+        "source": "C:\\Users\\abinh\\.gradle\\daemon\\8.5\\com.cocauto.app-main-34:\\mipmap-xxhdpi\\ic_launcher.webp"
+    },
+    {
+        "merged": "C:\\Users\\abinh\\.gradle\\daemon\\8.5\\com.cocauto.app-merged_res-32:\\mipmap-hdpi_ic_launcher.webp.flat",
+        "source": "C:\\Users\\abinh\\.gradle\\daemon\\8.5\\com.cocauto.app-main-34:\\mipmap-hdpi\\ic_launcher.webp"
+    },
+    {
+        "merged": "C:\\Users\\abinh\\.gradle\\daemon\\8.5\\com.cocauto.app-merged_res-32:\\layout_activity_main.xml.flat",
+        "source": "C:\\Users\\abinh\\.gradle\\daemon\\8.5\\com.cocauto.app-main-34:\\layout\\activity_main.xml"
+    },
+    {
+        "merged": "C:\\Users\\abinh\\.gradle\\daemon\\8.5\\com.cocauto.app-merged_res-32:\\layout_layout_floating_control.xml.flat",
+        "source": "C:\\Users\\abinh\\.gradle\\daemon\\8.5\\com.cocauto.app-main-34:\\layout\\layout_floating_control.xml"
+    },
+    {
+        "merged": "C:\\Users\\abinh\\.gradle\\daemon\\8.5\\com.cocauto.app-merged_res-32:\\mipmap-mdpi_ic_launcher_round.webp.flat",
+        "source": "C:\\Users\\abinh\\.gradle\\daemon\\8.5\\com.cocauto.app-main-34:\\mipmap-mdpi\\ic_launcher_round.webp"
+    },
+    {
+        "merged": "C:\\Users\\abinh\\.gradle\\daemon\\8.5\\com.cocauto.app-merged_res-32:\\mipmap-xxhdpi_ic_launcher_round.webp.flat",
+        "source": "C:\\Users\\abinh\\.gradle\\daemon\\8.5\\com.cocauto.app-main-34:\\mipmap-xxhdpi\\ic_launcher_round.webp"
+    },
+    {
+        "merged": "C:\\Users\\abinh\\.gradle\\daemon\\8.5\\com.cocauto.app-merged_res-32:\\mipmap-xhdpi_ic_launcher_round.webp.flat",
+        "source": "C:\\Users\\abinh\\.gradle\\daemon\\8.5\\com.cocauto.app-main-34:\\mipmap-xhdpi\\ic_launcher_round.webp"
+    },
+    {
+        "merged": "C:\\Users\\abinh\\.gradle\\daemon\\8.5\\com.cocauto.app-merged_res-32:\\drawable_ic_target_crosshair.xml.flat",
+        "source": "C:\\Users\\abinh\\.gradle\\daemon\\8.5\\com.cocauto.app-main-34:\\drawable\\ic_target_crosshair.xml"
+    },
+    {
+        "merged": "com.cocauto.app-merged_res-32:/layout_layout_floating_control.xml.flat",
+        "source": "com.cocauto.app-main-34:/layout/layout_floating_control.xml"
+    },
+    {
+        "merged": "C:\\Users\\abinh\\.gradle\\daemon\\8.5\\com.cocauto.app-merged_res-32:\\layout_layout_settings_dialog.xml.flat",
+        "source": "C:\\Users\\abinh\\.gradle\\daemon\\8.5\\com.cocauto.app-main-34:\\layout\\layout_settings_dialog.xml"
+    }
+]

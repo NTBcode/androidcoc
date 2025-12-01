@@ -1,0 +1,4 @@
+com.cocauto.test.app-androidTest-0 C:\Users\abinh\AndroidStudioProjects\COCAutoBot\app\build\generated\res\resValues\androidTest\debug
+com.cocauto.test.app-mergeDebugAndroidTestResources-1 C:\Users\abinh\AndroidStudioProjects\COCAutoBot\app\build\intermediates\incremental\debugAndroidTest\mergeDebugAndroidTestResources\merged.dir
+com.cocauto.test.app-mergeDebugAndroidTestResources-2 C:\Users\abinh\AndroidStudioProjects\COCAutoBot\app\build\intermediates\incremental\debugAndroidTest\mergeDebugAndroidTestResources\stripped.dir
+com.cocauto.test.app-merged_res-3 C:\Users\abinh\AndroidStudioProjects\COCAutoBot\app\build\intermediates\merged_res\debugAndroidTest

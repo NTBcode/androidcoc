@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="0dp">
+
+    <ImageButton
+        android:id="@+id/btnToggle"
+        android:layout_width="45dp"
+        android:layout_height="45dp"
+        android:src="@mipmap/ic_launcher_round"
+        android:background="@android:drawable/btn_default_small"
+        android:padding="5dp"
+        android:scaleType="fitCenter"
+        android:contentDescription="Logo" />
+
+    <LinearLayout
+        android:id="@+id/expandedLayout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="#CC000000"
+        android:padding="5dp"
+        android:visibility="gone"
+        android:layout_marginTop="2dp">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/btnPlayPause"
+                android:layout_width="50dp"
+                android:layout_height="40dp"
+                android:text="▶"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:backgroundTint="#4CAF50"
+                android:textColor="#FFFFFF"
+                android:layout_marginEnd="2dp"
+                android:padding="0dp"/>
+
+            <Button
+                android:id="@+id/btnConfigPos"
+                android:layout_width="50dp"
+                android:layout_height="40dp"
+                android:text="✛"
+                android:textSize="18sp"
+                android:backgroundTint="#FF9800"
+                android:textColor="#FFFFFF"
+                android:layout_marginEnd="2dp"
+                android:padding="0dp"/>
+
+            <Button
+                android:id="@+id/btnSettings"
+                android:layout_width="50dp"
+                android:layout_height="40dp"
+                android:text="⚙"
+                android:textSize="18sp"
+                android:backgroundTint="#2196F3"
+                android:textColor="#FFFFFF"
+                android:layout_marginEnd="2dp"
+                android:padding="0dp"/>
+
+            <Button
+                android:id="@+id/btnHide"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:text="▲"
+                android:textSize="14sp"
+                android:backgroundTint="#666666"
+                android:textColor="#FFFFFF"
+                android:padding="0dp"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="4dp"
+            android:weightSum="2">
+
+            <Button
+                android:id="@+id/btnRecord"
+                android:layout_width="0dp"
+                android:layout_height="35dp"
+                android:layout_weight="1"
+                android:text="⚫ Ghi"
+                android:textSize="12sp"
+                android:backgroundTint="#F44336"
+                android:textColor="#FFFFFF"
+                android:layout_marginEnd="2dp"
+                android:padding="0dp"/>
+
+            <Button
+                android:id="@+id/btnSelectScript"
+                android:layout_width="0dp"
+                android:layout_height="35dp"
+                android:layout_weight="1"
+                android:text="📂 Chọn KB"
+                android:textSize="12sp"
+                android:backgroundTint="#9C27B0"
+                android:textColor="#FFFFFF"
+                android:layout_marginStart="2dp"
+                android:padding="0dp"/>
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tvScriptName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Chưa chọn kịch bản"
+            android:textColor="#FFFF00"
+            android:textSize="11sp"
+            android:gravity="center"
+            android:singleLine="true"
+            android:ellipsize="middle"
+            android:padding="2dp"/>
+
+        <ScrollView
+            android:layout_width="200dp"
+            android:layout_height="60dp"
+            android:background="#33FFFFFF"
+            android:layout_marginTop="4dp">
+            <TextView
+                android:id="@+id/tvLog"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="#FFFFFF"
+                android:textSize="10sp"
+                android:fontFamily="monospace"
+                android:padding="2dp"
+                android:text="Sẵn sàng..." />
+        </ScrollView>
+    </LinearLayout>
+</LinearLayout>

@@ -1,0 +1,19 @@
+// File: COCAutoBot/build.gradle
+buildscript {
+    ext.kotlin_version = "1.9.0"
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath "com.android.tools.build:gradle:8.1.0"
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    }
+}
+
+// --- ĐÃ XÓA KHỐI allprojects {} TẠI ĐÂY ---
+// Lý do: Chúng ta đã khai báo repositories bên file settings.gradle rồi.
+
+task clean(type: Delete) {
+    delete(rootProject.layout.buildDirectory)
+}

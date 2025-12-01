@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="300dp"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="#DD000000"
+    android:padding="16dp">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="CẤU HÌNH BOT"
+        android:textColor="#FFFFFF"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:gravity="center"
+        android:layout_marginBottom="10dp"/>
+
+    <TextView 
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="--- ĐI FARM (Ngưỡng tìm nhà) ---" 
+        android:textColor="#AAAAAA"
+        android:textSize="12sp"
+        android:layout_marginTop="5dp"
+        android:layout_marginBottom="2dp"/>
+
+    <LinearLayout 
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:weightSum="2">
+        
+        <EditText 
+            android:id="@+id/etGoldThreshold" 
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="Vàng Min" 
+            android:textColor="#FFFFFF"
+            android:textColorHint="#888888"
+            android:textSize="14sp"
+            android:inputType="number"
+            android:layout_marginEnd="4dp"/>
+            
+        <EditText 
+            android:id="@+id/etElixirThreshold" 
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="Dầu Min" 
+            android:textColor="#FFFFFF"
+            android:textColorHint="#888888"
+            android:textSize="14sp"
+            android:inputType="number"
+            android:layout_marginStart="4dp"/>
+    </LinearLayout>
+
+    <LinearLayout 
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+        
+        <EditText 
+            android:id="@+id/etAttackDuration" 
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Thời gian đánh (giây)" 
+            android:textColor="#FFFFFF"
+            android:textColorHint="#888888"
+            android:textSize="14sp"
+            android:inputType="number"/>
+    </LinearLayout>
+
+    <TextView 
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="--- NÂNG TƯỜNG (Ngưỡng kho nhà) ---" 
+        android:textColor="#AAAAAA"
+        android:textSize="12sp"
+        android:layout_marginTop="15dp"
+        android:layout_marginBottom="2dp"/>
+
+    <LinearLayout 
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:weightSum="2">
+        
+        <EditText 
+            android:id="@+id/etUpgradeGold" 
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="Vàng >= ?" 
+            android:textColor="#FFFFFF"
+            android:textColorHint="#888888"
+            android:textSize="14sp"
+            android:inputType="number"
+            android:layout_marginEnd="4dp"/>
+            
+        <EditText 
+            android:id="@+id/etUpgradeElixir" 
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="Dầu >= ?" 
+            android:textColor="#FFFFFF"
+            android:textColorHint="#888888"
+            android:textSize="14sp"
+            android:inputType="number"
+            android:layout_marginStart="4dp"/>
+    </LinearLayout>
+
+    <LinearLayout 
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+        
+        <EditText 
+            android:id="@+id/etMatches" 
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Số trận trước khi check tường" 
+            android:textColor="#FFFFFF"
+            android:textColorHint="#888888"
+            android:textSize="14sp"
+            android:inputType="number"/>
+    </LinearLayout>
+
+    <CheckBox
+        android:id="@+id/cbEnableWall"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Bật Auto Nâng Tường"
+        android:textColor="#FFFFFF"
+        android:buttonTint="#FFFFFF"
+        android:layout_marginTop="5dp"/>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="20dp">
+        
+        <Button
+            android:id="@+id/btnCancel"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:text="Hủy"
+            android:textColor="#FFFFFF"
+            android:backgroundTint="#757575"
+            android:layout_marginEnd="5dp"/>
+
+        <Button
+            android:id="@+id/btnSave"
+            android:layout_width="0dp"
+            android:layout_height="40dp"
+            android:layout_weight="1"
+            android:text="Lưu &amp; Đóng"
+            android:textColor="#FFFFFF"
+            android:backgroundTint="#2196F3"
+            android:layout_marginStart="5dp"/>
+    </LinearLayout>
+
+</LinearLayout>
