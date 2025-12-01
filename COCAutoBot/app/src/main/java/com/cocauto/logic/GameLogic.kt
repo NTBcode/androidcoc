@@ -40,20 +40,19 @@ class GameLogic(
     private var gameHeight = 0
 
     // --- CÁC VÙNG QUÉT OCR (Tự động tính toán) ---
-    // 1. Của người chơi (Góc Phải)
     private var playerGoldRegion: Rect? = null
     private var playerElixirRegion: Rect? = null
-
-    // 2. Của đối thủ (Góc Trái - Mới thêm)
     private var enemyGoldRegion: Rect? = null
     private var enemyElixirRegion: Rect? = null
 
     private var selectedAttackScripts: List<String> = emptyList()
     private var currentScriptIndex = 0
 
-    // --- HÀM TÍNH TOÁN VÙNG QUÉT THÔNG MINH ---
+    // === MỚI: Cache kích thước màn hình thực để tránh query nhiều lần ===
+    private var realScreenWidth = 0
+    private var realScreenHeight = 0
+
     private fun calculateSmartRegions(width: Int, height: Int) {
-        // A. NGƯỜI CHƠI (Góc Trên Phải - Như cũ)
         val pGx = (width * 0.78).toInt()
         val pGy = (height * 0.005).toInt()
         val pGw = (width * 0.18).toInt()
@@ -66,12 +65,10 @@ class GameLogic(
         val pEh = (height * 0.09).toInt()
         playerElixirRegion = Rect(pEx, pEy, pEw, pEh)
 
-        // B. ĐỐI THỦ (Góc Trên Trái - Mới cập nhật theo ảnh)
-        // Vị trí: X ~ 2.5%, Y ~ 13.5% (Vàng), Y ~ 18.5% (Dầu)
         val eGx = (width * 0.025).toInt()
         val eGy = (height * 0.135).toInt()
-        val eGw = (width * 0.15).toInt() // Rộng khoảng 15% màn hình
-        val eGh = (height * 0.045).toInt() // Cao khoảng 4.5% màn hình
+        val eGw = (width * 0.15).toInt()
+        val eGh = (height * 0.045).toInt()
         enemyGoldRegion = Rect(eGx, eGy, eGw, eGh)
 
         val eEx = eGx
@@ -83,18 +80,35 @@ class GameLogic(
         Timber.d("Smart Regions Updated for ${width}x${height}")
     }
 
-    // --- CẬP NHẬT ĐỘ PHÂN GIẢI ---
     private fun updateGameResolution(width: Int, height: Int) {
         if (gameWidth != width || gameHeight != height) {
             gameWidth = width
             gameHeight = height
-            // Tính toán lại ngay khi có kích thước mới
             calculateSmartRegions(width, height)
+
+            // === QUAN TRỌNG: Cập nhật kích thước màn hình thực ===
+            updateRealScreenSize()
+
             onLog("Đã xác định màn hình: ${gameWidth}x${gameHeight}")
         }
     }
 
-    // --- HÀM KHỞI TẠO (Called by AutoService) ---
+    // === HÀM MỚI: Lấy kích thước màn hình thực (Physical screen) ===
+    private fun updateRealScreenSize() {
+        try {
+            val wm = context.getSystemService(Context.WINDOW_SERVICE) as android.view.WindowManager
+            val metrics = android.util.DisplayMetrics()
+            wm.defaultDisplay.getRealMetrics(metrics)
+
+            realScreenWidth = metrics.widthPixels
+            realScreenHeight = metrics.heightPixels
+
+            Timber.d("Real screen size: ${realScreenWidth}x${realScreenHeight}")
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to get real screen size")
+        }
+    }
+
     suspend fun initializeResolution(getScreenshot: suspend () -> Bitmap?): Boolean {
         var attempts = 0
         while (attempts < 5) {
@@ -110,12 +124,10 @@ class GameLogic(
         return false
     }
 
-    // --- MAIN LOOP ---
     suspend fun mainLoop(getScreenshot: suspend () -> Bitmap?) {
         onLog("=== BOT BẮT ĐẦU ===")
         delay(1000)
 
-        // 1. Lấy độ phân giải đã lưu để tính vùng quét trước
         val savedRes = CoordinateManager.getGameResolution(context)
         if (savedRes.x > 0) {
             updateGameResolution(savedRes.x, savedRes.y)
@@ -131,18 +143,15 @@ class GameLogic(
 
         while (isRunning && coroutineContext.isActive) {
             try {
-                // Luôn lấy ảnh mới nhất
                 val screenshot = getScreenshot()
                 if (screenshot == null) {
                     onLog("Lỗi chụp ảnh. Thử lại...")
                     delay(2000); continue
                 }
 
-                // Check lại nếu màn hình xoay
                 updateGameResolution(screenshot.width, screenshot.height)
 
                 if (enableWallUpgrade) {
-                    // Check tài nguyên người chơi
                     val screenMat = imageProcessor.bitmapToMat(screenshot)
                     val playerRes = getPlayerResourcesSmart(screenMat)
                     screenMat.release()
@@ -164,7 +173,6 @@ class GameLogic(
                 }
 
                 if (isRunning) {
-                    // onLog("Nghỉ 3s...")
                     delay(3000)
                 }
 
@@ -177,7 +185,6 @@ class GameLogic(
         onLog("Bot đã dừng.")
     }
 
-    // --- LOGIC ĐI FARM ---
     private suspend fun performFarming(getScreenshot: suspend () -> Bitmap?): Boolean {
         if (!clickButton(CoordinateManager.KEY_BTN_ATTACK)) return false
         delay(2000)
@@ -192,12 +199,10 @@ class GameLogic(
 
         while (isRunning && searchCount < maxSearch && coroutineContext.isActive) {
             searchCount++
-            // onLog("Tìm nhà... ($searchCount)")
 
             val screenshot = getScreenshot() ?: continue
             val screenMat = imageProcessor.bitmapToMat(screenshot)
 
-            // QUAN TRỌNG: Dùng hàm đọc tài nguyên ĐỐI THỦ mới
             val enemyRes = getEnemyResourcesSmart(screenMat)
             screenMat.release()
 
@@ -222,10 +227,7 @@ class GameLogic(
         }
     }
 
-    // --- CÁC HÀM OCR THÔNG MINH (AUTO SCALE) ---
-
     private fun getPlayerResourcesSmart(screen: org.opencv.core.Mat): ResourceData {
-        // Lấy vùng đã tính toán
         val rGold = playerGoldRegion ?: return ResourceData(0, 0)
         val rElixir = playerElixirRegion ?: return ResourceData(0, 0)
 
@@ -235,20 +237,14 @@ class GameLogic(
     }
 
     private fun getEnemyResourcesSmart(screen: org.opencv.core.Mat): ResourceData {
-        // Lấy vùng đã tính toán
         val rGold = enemyGoldRegion ?: return ResourceData(0, 0)
         val rElixir = enemyElixirRegion ?: return ResourceData(0, 0)
 
-        // Đối thủ thường số màu trắng/vàng nhạt trên nền tối
         val gold = ocrEngine.readPlayerResource(screen, rGold, false)
-
-        // Dầu đối thủ đôi khi có nền tím đậm, thử bật isPurple=true
         val elixir = ocrEngine.readPlayerResource(screen, rElixir, true)
 
         return ResourceData(gold, elixir)
     }
-
-    // --- CÁC HÀM KHÁC GIỮ NGUYÊN ---
 
     private suspend fun executeAttackSequence() {
         val startTime = System.currentTimeMillis()
@@ -314,25 +310,41 @@ class GameLogic(
         return true
     }
 
+    // === HÀM ĐÃ SỬA: CLICK BUTTON VỚI LOGIC CHUYỂN ĐỔI TỌA ĐỘ ĐÚNG ===
     private suspend fun clickButton(key: String): Boolean {
         if (!isRunning) return false
-        val point = CoordinateManager.getCoordinate(context, key)
-        if (point.x <= 0) {
+
+        // 1. Lấy tọa độ đã lưu (trong hệ quy chiếu Game)
+        val gamePoint = CoordinateManager.getCoordinate(context, key)
+
+        if (gamePoint.x <= 0 || gamePoint.y <= 0) {
             onLog("⚠️ Chưa cài nút: $key")
             return false
         }
-        // Ánh xạ ngược từ tọa độ Game -> Màn hình thực
-        val wm = context.getSystemService(Context.WINDOW_SERVICE) as android.view.WindowManager
-        val metrics = android.util.DisplayMetrics()
-        wm.defaultDisplay.getRealMetrics(metrics)
 
-        val scaleX = metrics.widthPixels.toFloat() / gameWidth
-        val scaleY = metrics.heightPixels.toFloat() / gameHeight
+        // 2. Lấy kích thước màn hình thực (nếu chưa có)
+        if (realScreenWidth == 0 || realScreenHeight == 0) {
+            updateRealScreenSize()
+        }
 
-        val clickX = point.x * scaleX
-        val clickY = point.y * scaleY
+        // 3. Kiểm tra Game Resolution đã được khởi tạo chưa
+        if (gameWidth == 0 || gameHeight == 0) {
+            onLog("⚠️ Lỗi: Chưa có Game Resolution!")
+            return false
+        }
 
+        // 4. === CHUYỂN ĐỔI: Game Coordinate -> Screen Coordinate ===
+        // Công thức: screenPos = gamePos * (realScreenSize / gameSize)
+        val scaleX = realScreenWidth.toFloat() / gameWidth
+        val scaleY = realScreenHeight.toFloat() / gameHeight
+
+        val clickX = gamePoint.x * scaleX
+        val clickY = gamePoint.y * scaleY
+
+        // 5. Thực hiện click
+        Timber.d("Click $key: Game($gamePoint.x, $gamePoint.y) -> Screen($clickX, $clickY)")
         gestureDispatcher.tap(clickX, clickY)
+
         return true
     }
 

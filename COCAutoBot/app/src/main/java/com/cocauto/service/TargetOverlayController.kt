@@ -13,6 +13,7 @@ import android.widget.TextView
 import android.widget.Toast
 import com.cocauto.R
 import com.cocauto.utils.CoordinateManager
+import timber.log.Timber
 
 class TargetOverlayController(private val context: Context) {
 
@@ -25,7 +26,7 @@ class TargetOverlayController(private val context: Context) {
     private var touchX = 0f
     private var touchY = 0f
 
-    // Lấy kích thước màn hình vật lý (Tờ giấy trên)
+    // Lấy kích thước màn hình vật lý (Màn hình thiết bị thực tế)
     private fun getRealScreenSize(): Point {
         val metrics = DisplayMetrics()
         windowManager.defaultDisplay.getRealMetrics(metrics)
@@ -39,14 +40,23 @@ class TargetOverlayController(private val context: Context) {
 
         targetView = LayoutInflater.from(context).inflate(R.layout.layout_target_overlay, null)
 
-        // Lấy thông tin đã lưu
-        val savedPoint = CoordinateManager.getCoordinate(context, key)
+        // === QUAN TRỌNG: Lấy độ phân giải Game từ ảnh chụp màn hình ===
         val gameRes = CoordinateManager.getGameResolution(context)
         val screenSize = getRealScreenSize()
 
-        // Nếu chưa có Game Resolution (chưa chạy bot lần nào), dùng tạm màn hình hiện tại
-        val baseW = if (gameRes.x > 0) gameRes.x else screenSize.x
-        val baseH = if (gameRes.y > 0) gameRes.y else screenSize.y
+        // Kiểm tra xem đã có Game Resolution chưa
+        if (gameRes.x == 0 || gameRes.y == 0) {
+            Toast.makeText(
+                context,
+                "⚠️ Chưa xác định được độ phân giải Game!\nVui lòng chạy Bot 1 lần để calibrate.",
+                Toast.LENGTH_LONG
+            ).show()
+            Timber.w("Game resolution not initialized. Cannot show target overlay.")
+            return
+        }
+
+        // Lấy tọa độ đã lưu (trong hệ quy chiếu Game)
+        val savedPoint = CoordinateManager.getCoordinate(context, key)
 
         val layoutFlag = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
@@ -59,7 +69,7 @@ class TargetOverlayController(private val context: Context) {
             WindowManager.LayoutParams.WRAP_CONTENT,
             layoutFlag,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-                    WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or // Tràn viền
+                    WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or
                     WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
             PixelFormat.TRANSLUCENT
         ).apply {
@@ -68,16 +78,21 @@ class TargetOverlayController(private val context: Context) {
             }
             gravity = Gravity.TOP or Gravity.START
 
-            // Logic hiển thị lại vị trí cũ:
-            // Map từ Game Coord -> Screen Coord để hiển thị icon đúng chỗ
+            // === LOGIC HIỂN THỊ LẠI VỊ TRÍ CŨ (ĐÃ SỬA) ===
             if (savedPoint.x != 0 && savedPoint.y != 0) {
-                val ratioX = savedPoint.x.toFloat() / baseW
-                val ratioY = savedPoint.y.toFloat() / baseH
-                x = (ratioX * screenSize.x).toInt() - 40 // Trừ bán kính icon
-                y = (ratioY * screenSize.y).toInt() - 40
+                // Chuyển đổi từ Game Coordinate -> Screen Coordinate
+                val scaleX = screenSize.x.toFloat() / gameRes.x
+                val scaleY = screenSize.y.toFloat() / gameRes.y
+
+                // Map tọa độ Game sang màn hình thực
+                x = (savedPoint.x * scaleX).toInt() - 16 // Trừ offset icon (nửa kích thước icon)
+                y = (savedPoint.y * scaleY).toInt() - 16
+
+                Timber.d("Restored position: Game($savedPoint.x, $savedPoint.y) -> Screen($x, $y)")
             } else {
-                x = screenSize.x / 2
-                y = screenSize.y / 2
+                // Chưa lưu -> Hiển thị giữa màn hình
+                x = screenSize.x / 2 - 16
+                y = screenSize.y / 2 - 16
             }
         }
 
@@ -108,7 +123,7 @@ class TargetOverlayController(private val context: Context) {
                         params!!.y = initialY + (event.rawY - initialTouchY).toInt()
                         windowManager.updateViewLayout(targetView, params)
 
-                        // Cập nhật vị trí ngón tay hiện tại
+                        // Cập nhật vị trí ngón tay hiện tại (màn hình thực)
                         touchX = event.rawX
                         touchY = event.rawY
                         return true
@@ -123,37 +138,70 @@ class TargetOverlayController(private val context: Context) {
             }
         })
 
-        // Xử lý nút LƯU
+        // === XỬ LÝ NÚT LƯU (ĐÃ SỬA HOÀN TOÀN) ===
         btnSave?.setOnClickListener {
-            // 1. Xác định tọa độ tâm trên màn hình hiện tại (Screen Coord)
-            // Nếu người dùng chưa kéo (vừa mở lên bấm lưu luôn) -> Tính theo params
-            var centerX = touchX
-            var centerY = touchY
+            // 1. Xác định tọa độ tâm icon trên màn hình thực
+            var centerScreenX = touchX
+            var centerScreenY = touchY
 
-            if (centerX == 0f && centerY == 0f) {
-                centerX = (params!!.x + imgTarget!!.width / 2).toFloat()
-                centerY = (params!!.y + imgTarget!!.height / 2).toFloat()
+            if (centerScreenX == 0f && centerScreenY == 0f) {
+                centerScreenX = (params!!.x + imgTarget!!.width / 2f)
+                centerScreenY = (params!!.y + imgTarget!!.height / 2f)
             }
 
-            // 2. Lấy kích thước các "tờ giấy"
+            // 2. Lấy kích thước
             val currentScreen = getRealScreenSize()
-            var targetW = gameRes.x
-            var targetH = gameRes.y
+            val gameResolution = CoordinateManager.getGameResolution(context)
 
-            // Fallback: Nếu chưa có độ phân giải Game, lấy màn hình làm chuẩn
-            if (targetW == 0 || targetH == 0) {
-                targetW = currentScreen.x
-                targetH = currentScreen.y
-                CoordinateManager.saveGameResolution(context, targetW, targetH)
+            if (gameResolution.x == 0 || gameResolution.y == 0) {
+                Toast.makeText(
+                    context,
+                    "❌ Lỗi: Chưa có Game Resolution!\nChạy Bot 1 lần trước.",
+                    Toast.LENGTH_LONG
+                ).show()
+                return@setOnClickListener
             }
 
-            // 3. ÁNH XẠ: Screen -> Game (Lưu vào tờ giấy dưới)
-            val finalX = (centerX / currentScreen.x * targetW).toInt()
-            val finalY = (centerY / currentScreen.y * targetH).toInt()
+            // 3. Tính toán scale
+            val scaleX = gameResolution.x.toFloat() / currentScreen.x
+            val scaleY = gameResolution.y.toFloat() / currentScreen.y
 
-            CoordinateManager.saveCoordinate(context, currentKey, finalX, finalY)
+            // 4. Chuyển đổi
+            val gameX = (centerScreenX * scaleX).toInt()
+            val gameY = (centerScreenY * scaleY).toInt()
 
-            Toast.makeText(context, "Đã lưu chuẩn: ($finalX, $finalY) @ ${targetW}x${targetH}", Toast.LENGTH_SHORT).show()
+            // 5. === DEBUG LOG CHI TIẾT ===
+            val debugInfo = """
+        ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        📍 LƯU TỌA ĐỘ: $currentKey
+        ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        🖥️ Screen Size: ${currentScreen.x} x ${currentScreen.y}
+        🎮 Game Size:   ${gameResolution.x} x ${gameResolution.y}
+        📐 Scale:       X=%.3f, Y=%.3f
+        
+        👆 Touch (Screen): (%.0f, %.0f)
+        🎯 Saved (Game):   ($gameX, $gameY)
+        
+        🔄 Test ngược:
+           Game → Screen = (%.0f, %.0f)
+        ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    """.trimIndent().format(
+                scaleX, scaleY,
+                centerScreenX, centerScreenY,
+                gameX / scaleX, gameY / scaleY
+            )
+
+            Timber.d(debugInfo)
+
+            // 6. Lưu
+            CoordinateManager.saveCoordinate(context, currentKey, gameX, gameY)
+
+            Toast.makeText(
+                context,
+                "✅ Đã lưu: ($gameX, $gameY)\n@ ${gameResolution.x}x${gameResolution.y}",
+                Toast.LENGTH_LONG
+            ).show()
+
             removeTarget()
             onSaved()
         }
@@ -161,15 +209,21 @@ class TargetOverlayController(private val context: Context) {
         try {
             windowManager.addView(targetView, params)
         } catch (e: Exception) {
-            e.printStackTrace()
+            Timber.e(e, "Failed to add target overlay")
+            Toast.makeText(context, "❌ Lỗi hiển thị Overlay: ${e.message}", Toast.LENGTH_SHORT).show()
         }
     }
 
     fun removeTarget() {
         if (targetView != null) {
-            try { windowManager.removeView(targetView) } catch (e: Exception) {}
+            try {
+                windowManager.removeView(targetView)
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to remove target view")
+            }
             targetView = null
-            touchX = 0f; touchY = 0f
+            touchX = 0f
+            touchY = 0f
         }
     }
 }

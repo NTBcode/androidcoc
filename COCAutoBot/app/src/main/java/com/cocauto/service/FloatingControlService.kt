@@ -53,24 +53,38 @@ class FloatingControlService : Service() {
                 serviceScope.launch {
                     var success = false
                     var attempts = 0
-                    while (attempts < 10) {
+
+                    // Thử tối đa 10 lần (5 giây) để lấy ảnh màn hình
+                    while (attempts < 10 && !success) {
                         delay(500)
+
                         val autoService = AutoService.getInstance()
                         if (autoService != null) {
+                            // === QUAN TRỌNG: Calibrate để xác định Game Resolution ===
                             success = autoService.calibrateResolutionSync {
                                 ScreenCaptureService.getInstance()?.captureScreen()
                             }
+
                             if (success) {
                                 val res = CoordinateManager.getGameResolution(this@FloatingControlService)
-                                addLog("✅ Sẵn sàng! (${res.x}x${res.y})")
+                                addLog("✅ Sẵn sàng! Màn hình: ${res.x}x${res.y}")
+
+                                // Hiển thị menu điều khiển
                                 isExpanded = true
                                 floatingView?.findViewById<View>(R.id.expandedLayout)?.visibility = View.VISIBLE
+
+                                Timber.d("Calibration successful: ${res.x}x${res.y}")
                                 break
                             }
                         }
                         attempts++
                     }
-                    if (!success) addLog("❌ Lỗi ảnh màn hình!")
+
+                    if (!success) {
+                        addLog("❌ Lỗi: Không lấy được ảnh màn hình!")
+                        addLog("💡 Thử lại: Bấm Logo sau 3s")
+                        Timber.e("Calibration failed after $attempts attempts")
+                    }
                 }
             }
         }
