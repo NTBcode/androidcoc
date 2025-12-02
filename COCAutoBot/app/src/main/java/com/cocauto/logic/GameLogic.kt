@@ -170,25 +170,27 @@ class GameLogic(
         }
     }
 
-    // --- HÀM CLICK (ÁNH XẠ NGƯỢC - GIỮ NGUYÊN VÌ ĐÃ FIX ĐÚNG) ---
+    /**
+     * Click nút đã lưu
+     * Tọa độ đã lưu là trên hệ quy chiếu GAME
+     * GestureDispatcher sẽ tự động chuyển sang màn hình vật lý
+     */
     private suspend fun clickButton(key: String): Boolean {
         if (!isRunning) return false
+
         val point = CoordinateManager.getCoordinate(context, key)
-        if (point.x <= 0) {
+        if (point.x <= 0 || point.y <= 0) {
             onLog("⚠️ Chưa cài nút: $key")
             return false
         }
-        // Ánh xạ ngược từ tọa độ Game (đã lưu chuẩn) -> Màn hình thực
-        val wm = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
-        val metrics = DisplayMetrics()
-        wm.defaultDisplay.getRealMetrics(metrics)
 
-        val clickX = point.x.toFloat() / gameWidth * metrics.widthPixels
-        val clickY = point.y.toFloat() / gameHeight * metrics.heightPixels
-
-        gestureDispatcher.tap(clickX, clickY)
+        // Dùng TRỰC TIẾP tọa độ đã lưu (không cần scale)
+        // GestureDispatcher sẽ tự động chuyển đổi
+        gestureDispatcher.tap(point.x.toFloat(), point.y.toFloat())
         return true
     }
+
+
 
     // --- QUAY VỀ HÀM OCR CŨ (Sử dụng scaleRect từ 960x540) ---
 
@@ -239,36 +241,49 @@ class GameLogic(
 
     private suspend fun runOneScriptCycle() {
         if (selectedAttackScripts.isEmpty()) {
-            val p = CoordinateManager.getCoordinate(context, CoordinateManager.KEY_BTN_DEPLOY_ATTACK)
-            if (p.x > 0) gestureDispatcher.tap(p.x.toFloat(), p.y.toFloat())
+            // Fallback: Click nút Deploy
+            clickButton(CoordinateManager.KEY_BTN_DEPLOY_ATTACK)
             return
         }
+
         val scriptPath = selectedAttackScripts[currentScriptIndex % selectedAttackScripts.size]
+
         val recordingData = if (scriptPath.startsWith("assets/")) {
             attackRecorder.loadRecordingFromAssets(scriptPath.substringAfter("assets/"))
         } else {
             attackRecorder.loadRecording(scriptPath)
         }
+
         if (recordingData != null) {
             val gestures = attackRecorder.buildGestureSummary(recordingData.actions)
             var currentTimeMs = 0L
+
             for (gesture in gestures) {
                 if (!isRunning) break
+
                 val targetTime = gesture.startTimeMs
                 val wait = targetTime - currentTimeMs
                 if (wait > 10) delay(wait)
 
+                // QUAN TRỌNG: Scale tọa độ script đúng cách
                 val start = scaleScriptPoint(gesture.startPoint)
                 val end = scaleScriptPoint(gesture.endPoint)
 
-                if (gesture.type == "tap") gestureDispatcher.tap(start.first, start.second)
-                else gestureDispatcher.swipe(start.first, start.second, end.first, end.second, gesture.durationMs)
+                when (gesture.type) {
+                    "tap" -> gestureDispatcher.tap(start.first, start.second)
+                    "hold", "swipe" -> gestureDispatcher.swipe(
+                        start.first, start.second,
+                        end.first, end.second,
+                        gesture.durationMs
+                    )
+                }
 
                 currentTimeMs = targetTime
             }
         }
-    }
 
+        currentScriptIndex = (currentScriptIndex + 1) % selectedAttackScripts.size
+    }
     private suspend fun returnHome() {
         clickButton(CoordinateManager.KEY_BTN_END_BATTLE)
         delay(1000)
@@ -283,11 +298,16 @@ class GameLogic(
         return true
     }
 
+    /**
+     * Scale tọa độ script (960x540) -> Game Resolution
+     */
     private fun scaleScriptPoint(point: Pair<Int, Int>): Pair<Float, Float> {
         val scriptBaseW = 960f
         val scriptBaseH = 540f
         val scaleX = gameWidth / scriptBaseW
         val scaleY = gameHeight / scriptBaseH
+
+        // Trả về tọa độ trên hệ quy chiếu GAME
         return Pair(point.first * scaleX, point.second * scaleY)
     }
 

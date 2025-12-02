@@ -9,9 +9,14 @@ import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.Toast
 import com.cocauto.logic.AttackRecorder
+import com.cocauto.utils.CoordinateManager
 import com.cocauto.utils.TouchAction
 import timber.log.Timber
 
+/**
+ * RecordingOverlayController - Fixed Version
+ * Ghi lại thao tác người dùng với tọa độ chuẩn hóa
+ */
 class RecordingOverlayController(private val context: Context) {
 
     private val windowManager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
@@ -19,11 +24,9 @@ class RecordingOverlayController(private val context: Context) {
     private var touchInterceptView: View? = null
     private var isRecording = false
 
-    // Danh sách hành động đã ghi
     private val recordedActions = mutableListOf<TouchAction>()
     private var startTime = 0L
 
-    // === BẢN FIX HOÀN TOÀN: Dùng 2 layer overlay ===
     @SuppressLint("ClickableViewAccessibility")
     fun startRecording(onStop: (String) -> Unit) {
         if (isRecording) return
@@ -37,44 +40,48 @@ class RecordingOverlayController(private val context: Context) {
             WindowManager.LayoutParams.TYPE_PHONE
         }
 
-        // === LAYER 1: Touch Intercept (PHỦ TOÀN MÀN HÌNH, TRONG SUỐT) ===
-        // Layer này sẽ CHẶN touch event để ghi lại, nhưng KHÔNG HIỂN THỊ gì
+        // === LAYER 1: Touch Intercept (Trong suốt, phủ toàn màn hình) ===
         val interceptView = View(context)
 
         val interceptParams = WindowManager.LayoutParams(
             WindowManager.LayoutParams.MATCH_PARENT,
             WindowManager.LayoutParams.MATCH_PARENT,
             layoutFlag,
-            // === QUAN TRỌNG: KHÔNG dùng FLAG_NOT_FOCUSABLE ===
-            // Để overlay này có thể nhận touch event
             WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or
                     WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
-                    WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or // Cho phép touch pass through
-                    WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH, // Nhận touch bên ngoài
+                    WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
+                    WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH,
             PixelFormat.TRANSLUCENT
-        )
+        ).apply {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+            }
+        }
 
-        // Xử lý Touch Event: GHI LẠI + CHUYỂN TIẾP xuống game
+        // Xử lý Touch Event: GHI LẠI + CHUYỂN TIẾP
         interceptView.setOnTouchListener { _, event ->
-            val x = event.rawX.toInt()
-            val y = event.rawY.toInt()
+            // Lấy tọa độ Raw (màn hình thật)
+            val rawX = event.rawX
+            val rawY = event.rawY
+
+            // Chuyển đổi sang Game Space để lưu
+            val gamePoint = screenToGameCoordinate(rawX, rawY)
             val time = System.currentTimeMillis() - startTime
 
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
-                    recordAction("down", x, y, time)
-                    passThroughClick(event.rawX, event.rawY)
+                    recordAction("down", gamePoint.first, gamePoint.second, time)
+                    passThroughClick(rawX, rawY)
                 }
                 MotionEvent.ACTION_MOVE -> {
-                    recordAction("move", x, y, time)
-                    // Không pass move để tránh lag
+                    recordAction("move", gamePoint.first, gamePoint.second, time)
                 }
                 MotionEvent.ACTION_UP -> {
-                    recordAction("up", x, y, time)
+                    recordAction("up", gamePoint.first, gamePoint.second, time)
                 }
             }
 
-            // === QUAN TRỌNG: Trả về FALSE để touch event được pass xuống game ===
+            // Trả về FALSE để touch event pass xuống game
             false
         }
 
@@ -88,7 +95,7 @@ class RecordingOverlayController(private val context: Context) {
             return
         }
 
-        // === LAYER 2: Control Button (CHỈ HIỂN THỊ NÚT DỪNG) ===
+        // === LAYER 2: Control Button ===
         val controlLayout = FrameLayout(context)
 
         val btnStop = Button(context).apply {
@@ -112,7 +119,6 @@ class RecordingOverlayController(private val context: Context) {
             WindowManager.LayoutParams.MATCH_PARENT,
             WindowManager.LayoutParams.WRAP_CONTENT,
             layoutFlag,
-            // Nút này CẦN focusable để có thể click được
             WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
                     WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
             PixelFormat.TRANSLUCENT
@@ -135,21 +141,17 @@ class RecordingOverlayController(private val context: Context) {
         if (!isRecording) return
         isRecording = false
 
-        // Xóa cả 2 layer
+        // Xóa overlay
         try {
-            if (touchInterceptView != null) {
-                windowManager.removeView(touchInterceptView)
-                touchInterceptView = null
-            }
+            touchInterceptView?.let { windowManager.removeView(it) }
+            touchInterceptView = null
         } catch (e: Exception) {
             Timber.e(e, "Failed to remove intercept view")
         }
 
         try {
-            if (overlayView != null) {
-                windowManager.removeView(overlayView)
-                overlayView = null
-            }
+            overlayView?.let { windowManager.removeView(it) }
+            overlayView = null
         } catch (e: Exception) {
             Timber.e(e, "Failed to remove overlay view")
         }
@@ -172,16 +174,38 @@ class RecordingOverlayController(private val context: Context) {
         }
     }
 
+    /**
+     * Chuyển đổi tọa độ màn hình -> Game Space
+     * Để lưu vào file script
+     */
+    private fun screenToGameCoordinate(rawX: Float, rawY: Float): Pair<Int, Int> {
+        val realScreen = CoordinateManager.getRealScreenSize(context)
+        val gameRes = CoordinateManager.getGameResolution(context)
+
+        if (gameRes.x == 0 || gameRes.y == 0) {
+            // Chưa có game resolution, trả về thẳng
+            return Pair(rawX.toInt(), rawY.toInt())
+        }
+
+        // Map: Screen -> Game
+        val gameX = (rawX / realScreen.x * gameRes.x).toInt()
+        val gameY = (rawY / realScreen.y * gameRes.y).toInt()
+
+        return Pair(gameX, gameY)
+    }
+
     private fun recordAction(type: String, x: Int, y: Int, time: Long) {
         recordedActions.add(TouchAction(type, x, y, time))
 
-        // Log mỗi 50 action để debug
+        // Log mỗi 50 action
         if (recordedActions.size % 50 == 0) {
             Timber.d("Recorded ${recordedActions.size} actions")
         }
     }
 
-    // Gửi lệnh click giả lập để game phản hồi
+    /**
+     * Pass-through click để game phản hồi ngay
+     */
     private fun passThroughClick(x: Float, y: Float) {
         val autoService = AutoService.getInstance()
         autoService?.performPassThroughTap(x, y)
