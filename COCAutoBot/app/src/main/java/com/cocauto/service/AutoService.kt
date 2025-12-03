@@ -10,7 +10,7 @@ import timber.log.Timber
 
 /**
  * Accessibility Service - Core của bot
- * Đã cập nhật: Thêm hàm performPassThroughTap cho chế độ Ghi âm
+ * Đã cập nhật: Thêm hàm testAttackScript
  */
 class AutoService : AccessibilityService() {
 
@@ -56,11 +56,9 @@ class AutoService : AccessibilityService() {
         return gameLogic?.initializeResolution(getScreenshot) ?: false
     }
 
-    // --- HÀM CLICK XUYÊN THẤU (Đã tối ưu tốc độ) ---
+    // --- HÀM CLICK XUYÊN THẤU ---
     fun performPassThroughTap(x: Float, y: Float) {
-        // Kiểm tra khởi tạo để tránh crash
         if (::gestureDispatcher.isInitialized) {
-            // Gọi trực tiếp hàm async, không cần coroutine launch để giảm độ trễ
             gestureDispatcher.tapAsync(x, y)
         }
     }
@@ -101,6 +99,22 @@ class AutoService : AccessibilityService() {
             botJob?.cancel()
         }
         botJob = null
+    }
+
+    /**
+     * NEW: Test attack script
+     */
+    fun testAttackScript(scriptPath: String, onLog: (String) -> Unit) {
+        ensureGameLogicCreated()
+
+        serviceScope.launch {
+            try {
+                gameLogic?.testAttackScript(scriptPath, onLog)
+            } catch (e: Exception) {
+                Timber.e(e, "Test script error")
+                onLog("❌ Lỗi test: ${e.message}")
+            }
+        }
     }
 
     fun updateSettings(

@@ -12,10 +12,6 @@
         "source": "com.cocauto.app-main-34:/layout/layout_floating_control.xml"
     },
     {
-        "merged": "com.cocauto.app-mergeDebugResources-31:/layout/floating_control.xml",
-        "source": "com.cocauto.app-main-34:/layout/floating_control.xml"
-    },
-    {
         "merged": "C:\\Users\\abinh\\.gradle\\daemon\\8.5\\com.cocauto.app-mergeDebugResources-31:\\layout\\activity_main.xml",
         "source": "C:\\Users\\abinh\\.gradle\\daemon\\8.5\\com.cocauto.app-main-34:\\layout\\activity_main.xml"
     },

@@ -19,6 +19,7 @@ id btnStart
 id btnStartService
 id btnStop
 id btnStopService
+id btnTestAttack
 id btnToggle
 id cbEnableWall
 id cbResourceFilter

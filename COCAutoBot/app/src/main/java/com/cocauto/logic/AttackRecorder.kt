@@ -14,7 +14,6 @@ import kotlin.math.max
 
 /**
  * Ghi và quản lý attack scripts
- * Đã FIX lỗi: Type Mismatch (Int/Long) và tên biến holdMs
  */
 class AttackRecorder(private val context: Context) {
 
@@ -36,7 +35,6 @@ class AttackRecorder(private val context: Context) {
             val filename = "${sessionName}_$timestamp.json"
             val file = File(recordingsDir, filename)
 
-            // Dùng Long cho thời gian
             val durationMs = if (actions.isNotEmpty()) {
                 actions.maxOf { it.timestampMs }
             } else {
@@ -47,7 +45,7 @@ class AttackRecorder(private val context: Context) {
                 metadata = RecordingMetadata(
                     name = "${sessionName}_$timestamp",
                     created = timestamp,
-                    durationMs = durationMs, // Đã sửa thành Long
+                    durationMs = durationMs,
                     durationSeconds = durationMs / 1000.0,
                     totalActions = actions.size,
                     schemaVersion = 2
@@ -93,7 +91,6 @@ class AttackRecorder(private val context: Context) {
      */
     fun loadRecordingFromAssets(filename: String): RecordingData? {
         try {
-            // Tự động thêm đường dẫn nếu cần
             val path = if (filename.contains("/")) filename else "attack_scripts/$filename"
 
             context.assets.open(path).use { inputStream ->
@@ -207,7 +204,6 @@ class AttackRecorder(private val context: Context) {
         return gestures.mapNotNull { group ->
             if (group.legacy != null) {
                 val action = group.legacy
-                // SỬA LỖI 1: Đổi holdDurationMs thành holdMs
                 val duration = if (action.holdMs > 0) action.holdMs else 0L
                 val type = if (action.type == "hold" || duration >= 250) "hold" else "tap"
 
@@ -274,7 +270,6 @@ data class RecordingData(
     val actions: List<TouchAction>
 )
 
-// SỬA LỖI 2: Đổi Int thành Long
 data class RecordingMetadata(
     val name: String,
     val created: Long,
@@ -296,7 +291,6 @@ data class RecordingInfo(
     val source: String
 )
 
-// SỬA LỖI 2: Đổi Int thành Long
 data class SimplifiedGesture(
     val type: String,
     val startTimeMs: Long,

@@ -30,14 +30,12 @@ class FloatingControlService : Service() {
     private var params: WindowManager.LayoutParams? = null
     private var isExpanded = false
 
-    // Trạng thái Bot
     private var isBotRunning = false
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var tvLog: TextView? = null
     private val logLines = mutableListOf<String>()
 
-    // Các Controller
     private lateinit var targetController: TargetOverlayController
     private lateinit var recordingController: RecordingOverlayController
 
@@ -54,13 +52,11 @@ class FloatingControlService : Service() {
                     var success = false
                     var attempts = 0
 
-                    // Thử tối đa 10 lần (5 giây) để lấy ảnh màn hình
                     while (attempts < 10 && !success) {
                         delay(500)
 
                         val autoService = AutoService.getInstance()
                         if (autoService != null) {
-                            // === QUAN TRỌNG: Calibrate để xác định Game Resolution ===
                             success = autoService.calibrateResolutionSync {
                                 ScreenCaptureService.getInstance()?.captureScreen()
                             }
@@ -69,7 +65,6 @@ class FloatingControlService : Service() {
                                 val res = CoordinateManager.getGameResolution(this@FloatingControlService)
                                 addLog("✅ Sẵn sàng! Màn hình: ${res.x}x${res.y}")
 
-                                // Hiển thị menu điều khiển
                                 isExpanded = true
                                 floatingView?.findViewById<View>(R.id.expandedLayout)?.visibility = View.VISIBLE
 
@@ -95,7 +90,6 @@ class FloatingControlService : Service() {
         startForeground(NOTIFICATION_ID, createNotification())
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
 
-        // Khởi tạo các Controller phụ trợ
         targetController = TargetOverlayController(this)
         recordingController = RecordingOverlayController(this)
 
@@ -166,16 +160,13 @@ class FloatingControlService : Service() {
             showSettingsDialog()
         }
 
-        // 6. Nút Ghi Kịch bản (MỚI)
+        // 6. Nút Ghi Kịch bản
         view.findViewById<Button>(R.id.btnRecord)?.setOnClickListener {
-            // Ẩn menu đi để ghi cho dễ
             floatingView?.visibility = View.GONE
 
             recordingController.startRecording { savedPath ->
-                // Callback khi dừng ghi: Hiện lại menu
                 floatingView?.visibility = View.VISIBLE
 
-                // Tự động chọn kịch bản vừa ghi
                 val autoService = AutoService.getInstance()
                 autoService?.updateAttackScripts(listOf(savedPath))
 
@@ -185,9 +176,14 @@ class FloatingControlService : Service() {
             }
         }
 
-        // 7. Nút Chọn Kịch bản (MỚI)
+        // 7. Nút Chọn Kịch bản
         view.findViewById<Button>(R.id.btnSelectScript)?.setOnClickListener {
             showScriptSelectionDialog()
+        }
+
+        // NEW: 8. Nút Test Attack
+        view.findViewById<Button>(R.id.btnTestAttack)?.setOnClickListener {
+            testSelectedAttackScript()
         }
     }
 
@@ -244,6 +240,44 @@ class FloatingControlService : Service() {
         btn?.backgroundTintList = android.content.res.ColorStateList.valueOf(Color.parseColor("#4CAF50"))
 
         addLog("⏹️ Đã dừng.")
+    }
+
+    // NEW: Test attack script đã chọn
+    private fun testSelectedAttackScript() {
+        val scriptName = floatingView?.findViewById<TextView>(R.id.tvScriptName)?.text?.toString()
+        if (scriptName == null || scriptName == "Chưa chọn kịch bản") {
+            Toast.makeText(this, "⚠️ Vui lòng chọn kịch bản trước!", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        // Tìm file path từ tên file
+        val dir = File(filesDir, "attack_recordings")
+        val file = dir.listFiles()?.find { it.name == scriptName }
+
+        if (file == null) {
+            Toast.makeText(this, "❌ Không tìm thấy file!", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        addLog("🎬 Bắt đầu test: $scriptName")
+
+        // Ẩn menu để xem rõ
+        floatingView?.visibility = View.GONE
+
+        serviceScope.launch {
+            try {
+                val autoService = AutoService.getInstance()
+                autoService?.testAttackScript(file.absolutePath) { msg ->
+                    addLog(msg)
+                }
+            } catch (e: Exception) {
+                addLog("❌ Lỗi test: ${e.message}")
+            } finally {
+                // Hiện lại menu sau 2 giây
+                delay(2000)
+                floatingView?.visibility = View.VISIBLE
+            }
+        }
     }
 
     // --- DIALOG CHỌN KỊCH BẢN ---
@@ -353,7 +387,6 @@ class FloatingControlService : Service() {
         dialog.show()
     }
 
-    // ... Helper Functions ...
     private fun addLog(msg: String) {
         serviceScope.launch {
             val time = java.text.SimpleDateFormat("mm:ss").format(java.util.Date())
@@ -367,10 +400,45 @@ class FloatingControlService : Service() {
 
     private fun showPositionConfigDialog() {
         floatingView?.visibility = View.GONE
-        val options = arrayOf("1. Nút Tấn công", "2. Nút Tìm trận", "3. Nút Thả quân", "4. Nút Next", "5. Nút End Battle", "6. Nút OK", "7. Nút Về nhà", "8. Nút Upgrade Menu")
-        val keys = arrayOf(CoordinateManager.KEY_BTN_ATTACK, CoordinateManager.KEY_BTN_FIND_MATCH, CoordinateManager.KEY_BTN_DEPLOY_ATTACK, CoordinateManager.KEY_BTN_NEXT, CoordinateManager.KEY_BTN_END_BATTLE, CoordinateManager.KEY_BTN_OK_RESULT, CoordinateManager.KEY_BTN_RETURN_HOME, CoordinateManager.KEY_BTN_UPGRADE_MENU)
-        val dialog = android.app.AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert).setTitle("Cấu hình vị trí").setItems(options) { _, which -> targetController.showTarget(keys[which], options[which]) { floatingView?.visibility = View.VISIBLE } }.setOnCancelListener { floatingView?.visibility = View.VISIBLE }.create()
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) dialog.window?.setType(WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY) else dialog.window?.setType(WindowManager.LayoutParams.TYPE_SYSTEM_ALERT)
+        val options = arrayOf(
+            "1. Nút Tấn công",
+            "2. Nút Tìm trận",
+            "3. Nút Thả quân",
+            "4. Nút Next",
+            "5. Nút End Battle",
+            "6. Nút OK",
+            "7. Nút Về nhà",
+            "8. Nút Upgrade Menu",
+            "9. Nút Nâng tường (Vàng)",
+            "10. Nút Nâng tường (Dầu)",
+            "11. Nút Xác nhận nâng tường"
+        )
+        val keys = arrayOf(
+            CoordinateManager.KEY_BTN_ATTACK,
+            CoordinateManager.KEY_BTN_FIND_MATCH,
+            CoordinateManager.KEY_BTN_DEPLOY_ATTACK,
+            CoordinateManager.KEY_BTN_NEXT,
+            CoordinateManager.KEY_BTN_END_BATTLE,
+            CoordinateManager.KEY_BTN_OK_RESULT,
+            CoordinateManager.KEY_BTN_RETURN_HOME,
+            CoordinateManager.KEY_BTN_UPGRADE_MENU,
+            CoordinateManager.KEY_BTN_UPGRADE_WALL_GOLD,
+            CoordinateManager.KEY_BTN_UPGRADE_WALL_ELIXIR,
+            CoordinateManager.KEY_BTN_CONFIRM_WALL_UPGRADE
+        )
+        val dialog = android.app.AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
+            .setTitle("Cấu hình vị trí")
+            .setItems(options) { _, which ->
+                targetController.showTarget(keys[which], options[which]) {
+                    floatingView?.visibility = View.VISIBLE
+                }
+            }
+            .setOnCancelListener { floatingView?.visibility = View.VISIBLE }
+            .create()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+            dialog.window?.setType(WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY)
+        else
+            dialog.window?.setType(WindowManager.LayoutParams.TYPE_SYSTEM_ALERT)
         dialog.show()
     }
 
@@ -378,7 +446,21 @@ class FloatingControlService : Service() {
     private fun setupDraggable() {
         val btn = floatingView?.findViewById<View>(R.id.btnToggle) ?: return
         var iX=0; var iY=0; var iTX=0f; var iTY=0f
-        btn.setOnTouchListener { v, e -> when(e.action) { MotionEvent.ACTION_DOWN -> { iX=params!!.x; iY=params!!.y; iTX=e.rawX; iTY=e.rawY; true }; MotionEvent.ACTION_UP -> { if(Math.abs(e.rawX-iTX)<10 && Math.abs(e.rawY-iTY)<10) v.performClick(); true }; MotionEvent.ACTION_MOVE -> { params!!.x=iX+(e.rawX-iTX).toInt(); params!!.y=iY+(e.rawY-iTY).toInt(); windowManager?.updateViewLayout(floatingView, params); true }; else -> false } }
+        btn.setOnTouchListener { v, e ->
+            when(e.action) {
+                MotionEvent.ACTION_DOWN -> {
+                    iX=params!!.x; iY=params!!.y; iTX=e.rawX; iTY=e.rawY; true
+                }
+                MotionEvent.ACTION_UP -> {
+                    if(Math.abs(e.rawX-iTX)<10 && Math.abs(e.rawY-iTY)<10) v.performClick(); true
+                }
+                MotionEvent.ACTION_MOVE -> {
+                    params!!.x=iX+(e.rawX-iTX).toInt(); params!!.y=iY+(e.rawY-iTY).toInt();
+                    windowManager?.updateViewLayout(floatingView, params); true
+                }
+                else -> false
+            }
+        }
     }
 
     private fun createNotification(): Notification {
@@ -387,7 +469,11 @@ class FloatingControlService : Service() {
             val mgr = getSystemService(NotificationManager::class.java)
             mgr.createNotificationChannel(NotificationChannel(channelId, "Bot Control", NotificationManager.IMPORTANCE_LOW))
         }
-        return NotificationCompat.Builder(this, channelId).setContentTitle("COC Bot").setContentText("Menu đang hiển thị").setSmallIcon(R.mipmap.ic_launcher).build()
+        return NotificationCompat.Builder(this, channelId)
+            .setContentTitle("COC Bot")
+            .setContentText("Menu đang hiển thị")
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .build()
     }
 
     override fun onDestroy() {

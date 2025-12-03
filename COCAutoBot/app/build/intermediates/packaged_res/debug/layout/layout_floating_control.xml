@@ -75,20 +75,21 @@
                 android:padding="0dp"/>
         </LinearLayout>
 
+        <!-- Row 2: Record, Select Script, Test Attack -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:layout_marginTop="4dp"
-            android:weightSum="2">
+            android:weightSum="3">
 
             <Button
                 android:id="@+id/btnRecord"
                 android:layout_width="0dp"
                 android:layout_height="35dp"
                 android:layout_weight="1"
-                android:text="⚫ Ghi"
-                android:textSize="12sp"
+                android:text="⚫"
+                android:textSize="14sp"
                 android:backgroundTint="#F44336"
                 android:textColor="#FFFFFF"
                 android:layout_marginEnd="2dp"
@@ -99,9 +100,22 @@
                 android:layout_width="0dp"
                 android:layout_height="35dp"
                 android:layout_weight="1"
-                android:text="📂 Chọn KB"
-                android:textSize="12sp"
+                android:text="📂"
+                android:textSize="14sp"
                 android:backgroundTint="#9C27B0"
+                android:textColor="#FFFFFF"
+                android:layout_marginStart="1dp"
+                android:layout_marginEnd="1dp"
+                android:padding="0dp"/>
+
+            <Button
+                android:id="@+id/btnTestAttack"
+                android:layout_width="0dp"
+                android:layout_height="35dp"
+                android:layout_weight="1"
+                android:text="🎬"
+                android:textSize="14sp"
+                android:backgroundTint="#FF5722"
                 android:textColor="#FFFFFF"
                 android:layout_marginStart="2dp"
                 android:padding="0dp"/>

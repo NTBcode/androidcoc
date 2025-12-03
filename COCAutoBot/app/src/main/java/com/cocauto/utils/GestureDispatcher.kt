@@ -32,8 +32,15 @@ class GestureDispatcher(private val service: AccessibilityService) {
     private fun getRealScreenSize(): android.graphics.Point {
         val wm = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
         val metrics = DisplayMetrics()
-        wm.defaultDisplay.getRealMetrics(metrics)
-        return android.graphics.Point(metrics.widthPixels, metrics.heightPixels)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            val bounds = wm.currentWindowMetrics.bounds
+            return android.graphics.Point(bounds.width(), bounds.height())
+        } else {
+            @Suppress("DEPRECATION")
+            wm.defaultDisplay.getRealMetrics(metrics)
+            return android.graphics.Point(metrics.widthPixels, metrics.heightPixels)
+        }
     }
 
     /**

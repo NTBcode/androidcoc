@@ -27,6 +27,11 @@ object CoordinateManager {
     const val KEY_BTN_RETURN_HOME = "btn_return_home"
     const val KEY_BTN_UPGRADE_MENU = "btn_upgrade_menu"
 
+    // NEW: Keys cho nâng tường
+    const val KEY_BTN_UPGRADE_WALL_GOLD = "btn_upgrade_wall_gold"
+    const val KEY_BTN_UPGRADE_WALL_ELIXIR = "btn_upgrade_wall_elixir"
+    const val KEY_BTN_CONFIRM_WALL_UPGRADE = "btn_confirm_wall_upgrade"
+
     // Key lưu độ phân giải
     private const val KEY_GAME_WIDTH = "game_width"
     private const val KEY_GAME_HEIGHT = "game_height"
@@ -132,17 +137,14 @@ object CoordinateManager {
 
     /**
      * Lưu độ phân giải Game (từ ảnh chụp màn hình)
-     * Ảnh từ MediaProjection = Màn hình thật (bao gồm system bars)
      */
     fun saveGameResolution(context: Context, width: Int, height: Int) {
-        // Lưu độ phân giải
         val prefs = getPrefs(context)
         prefs.edit()
             .putInt(KEY_GAME_WIDTH, width)
             .putInt(KEY_GAME_HEIGHT, height)
             .apply()
 
-        // Lưu system bars offset để mapping chính xác
         val statusBarHeight = getStatusBarHeight(context)
         val navBarHeight = getNavigationBarHeight(context)
         val cutoutTop = getCutoutOffset(context)
@@ -167,31 +169,15 @@ object CoordinateManager {
     }
 
     /**
-     * Lấy system bars offset đã lưu
-     */
-    private fun getSavedSystemBarsOffset(context: Context): Triple<Int, Int, Int> {
-        val prefs = getPrefs(context)
-        val statusBar = prefs.getInt(KEY_STATUS_BAR_HEIGHT, 0)
-        val navBar = prefs.getInt(KEY_NAV_BAR_HEIGHT, 0)
-        val cutout = prefs.getInt(KEY_CUTOUT_TOP, 0)
-        return Triple(statusBar, navBar, cutout)
-    }
-
-    /**
-     * LƯU TỌA ĐỘ (Từ Overlay -> Game Space)
-     * Input: Tọa độ ngón tay trên màn hình thật (Raw X/Y)
-     * Output: Tọa độ chuẩn hóa trong Game Space (ảnh chụp)
+     * LƯU TỌA ĐỘ
      */
     fun saveCoordinate(context: Context, key: String, rawX: Float, rawY: Float) {
         val realScreen = getRealScreenSize(context)
         val gameRes = getGameResolution(context)
 
-        // Nếu chưa có game resolution, dùng tạm màn hình thật
         val gameW = if (gameRes.x > 0) gameRes.x else realScreen.x
         val gameH = if (gameRes.y > 0) gameRes.y else realScreen.y
 
-        // Map tọa độ: Màn hình thật -> Game Space
-        // Game Space = Ảnh chụp màn hình (bao gồm system bars)
         val gameX = (rawX / realScreen.x * gameW).toInt()
         val gameY = (rawY / realScreen.y * gameH).toInt()
 
@@ -204,9 +190,7 @@ object CoordinateManager {
     }
 
     /**
-     * LẤY TỌA ĐỘ (Từ Game Space -> Gesture Space)
-     * Input: Key đã lưu
-     * Output: Tọa độ để dispatch gesture (tọa độ màn hình thật)
+     * LẤY TỌA ĐỘ
      */
     fun getCoordinateForGesture(context: Context, key: String): Point {
         val prefs = getPrefs(context)
@@ -220,31 +204,20 @@ object CoordinateManager {
         val realScreen = getRealScreenSize(context)
         val gameRes = getGameResolution(context)
 
-        // Nếu chưa có game resolution, trả về thẳng
         if (gameRes.x == 0 || gameRes.y == 0) {
             return Point(gameX, gameY)
         }
 
-        // Map ngược: Game Space -> Màn hình thật
         val gestureX = (gameX.toFloat() / gameRes.x * realScreen.x).toInt()
         val gestureY = (gameY.toFloat() / gameRes.y * realScreen.y).toInt()
 
         return Point(gestureX, gestureY)
     }
 
-    /**
-     * LẤY TỌA ĐỘ (Từ Game Space -> Overlay Display)
-     * Dùng để hiển thị lại vị trí đã lưu trong TargetOverlay
-     */
     fun getCoordinateForOverlay(context: Context, key: String): Point {
-        // Overlay sử dụng cùng hệ tọa độ với Gesture
         return getCoordinateForGesture(context, key)
     }
 
-    /**
-     * LẤY TỌA ĐỘ THÔI (Raw - trong Game Space)
-     * Dùng cho OCR và xử lý ảnh
-     */
     fun getCoordinate(context: Context, key: String): Point {
         val prefs = getPrefs(context)
         val x = prefs.getInt("${key}_x", 0)
@@ -252,14 +225,10 @@ object CoordinateManager {
         return Point(x, y)
     }
 
-    /**
-     * Scale tọa độ từ script (960x540) -> Game Space
-     */
     fun scaleScriptCoordinate(context: Context, scriptX: Int, scriptY: Int): Point {
         val gameRes = getGameResolution(context)
 
         if (gameRes.x == 0 || gameRes.y == 0) {
-            // Fallback
             val realScreen = getRealScreenSize(context)
             val scaleX = realScreen.x / 960f
             val scaleY = realScreen.y / 540f
@@ -271,17 +240,11 @@ object CoordinateManager {
         return Point((scriptX * scaleX).toInt(), (scriptY * scaleY).toInt())
     }
 
-    /**
-     * Kiểm tra xem tọa độ đã được cấu hình chưa
-     */
     fun isCoordinateConfigured(context: Context, key: String): Boolean {
         val point = getCoordinate(context, key)
         return point.x > 0 && point.y > 0
     }
 
-    /**
-     * Xóa tất cả tọa độ đã lưu
-     */
     fun clearAllCoordinates(context: Context) {
         getPrefs(context).edit().clear().apply()
     }

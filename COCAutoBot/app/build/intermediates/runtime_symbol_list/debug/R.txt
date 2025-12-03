@@ -3194,6 +3194,7 @@ int id btnStart 0x7f08006d
 int id btnStartService 0x7f08006e
 int id btnStop 0x7f08006f
 int id btnStopService 0x7f080070
+int id btnTestAttack 0x7f080211
 int id btnToggle 0x7f080071
 int id buttonPanel 0x7f080072
 int id cache_measures 0x7f080073

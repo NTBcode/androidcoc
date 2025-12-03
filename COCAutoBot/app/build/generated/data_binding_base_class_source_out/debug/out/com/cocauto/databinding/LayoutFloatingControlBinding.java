@@ -40,6 +40,9 @@ public final class LayoutFloatingControlBinding implements ViewBinding {
   public final Button btnSettings;
 
   @NonNull
+  public final Button btnTestAttack;
+
+  @NonNull
   public final ImageButton btnToggle;
 
   @NonNull
@@ -53,8 +56,8 @@ public final class LayoutFloatingControlBinding implements ViewBinding {
 
   private LayoutFloatingControlBinding(@NonNull LinearLayout rootView, @NonNull Button btnConfigPos,
       @NonNull Button btnHide, @NonNull Button btnPlayPause, @NonNull Button btnRecord,
-      @NonNull Button btnSelectScript, @NonNull Button btnSettings, @NonNull ImageButton btnToggle,
-      @NonNull LinearLayout expandedLayout, @NonNull TextView tvLog,
+      @NonNull Button btnSelectScript, @NonNull Button btnSettings, @NonNull Button btnTestAttack,
+      @NonNull ImageButton btnToggle, @NonNull LinearLayout expandedLayout, @NonNull TextView tvLog,
       @NonNull TextView tvScriptName) {
     this.rootView = rootView;
     this.btnConfigPos = btnConfigPos;
@@ -63,6 +66,7 @@ public final class LayoutFloatingControlBinding implements ViewBinding {
     this.btnRecord = btnRecord;
     this.btnSelectScript = btnSelectScript;
     this.btnSettings = btnSettings;
+    this.btnTestAttack = btnTestAttack;
     this.btnToggle = btnToggle;
     this.expandedLayout = expandedLayout;
     this.tvLog = tvLog;
@@ -132,6 +136,12 @@ public final class LayoutFloatingControlBinding implements ViewBinding {
         break missingId;
       }
 
+      id = R.id.btnTestAttack;
+      Button btnTestAttack = ViewBindings.findChildViewById(rootView, id);
+      if (btnTestAttack == null) {
+        break missingId;
+      }
+
       id = R.id.btnToggle;
       ImageButton btnToggle = ViewBindings.findChildViewById(rootView, id);
       if (btnToggle == null) {
@@ -157,8 +167,8 @@ public final class LayoutFloatingControlBinding implements ViewBinding {
       }
 
       return new LayoutFloatingControlBinding((LinearLayout) rootView, btnConfigPos, btnHide,
-          btnPlayPause, btnRecord, btnSelectScript, btnSettings, btnToggle, expandedLayout, tvLog,
-          tvScriptName);
+          btnPlayPause, btnRecord, btnSelectScript, btnSettings, btnTestAttack, btnToggle,
+          expandedLayout, tvLog, tvScriptName);
     }
     String missingId = rootView.getResources().getResourceName(id);
     throw new NullPointerException("Missing required view with ID: ".concat(missingId));

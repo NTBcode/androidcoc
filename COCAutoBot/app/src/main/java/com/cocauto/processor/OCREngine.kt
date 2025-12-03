@@ -4,12 +4,13 @@ import android.content.Context
 import android.graphics.Bitmap
 import com.googlecode.tesseract.android.TessBaseAPI
 import org.opencv.core.Mat
+import org.opencv.core.Rect
 import timber.log.Timber
 import java.io.File
 import java.io.FileOutputStream
 
 /**
- * OCR Engine sử dụng Tesseract
+ * OCR Engine với khả năng tự động detect vùng nhận diện thông minh
  */
 class OCREngine(private val context: Context) {
 
@@ -29,7 +30,6 @@ class OCREngine(private val context: Context) {
                 tessDir.mkdirs()
             }
 
-            // Copy eng.traineddata từ assets nếu chưa có
             val trainedDataFile = File(tessDir, "eng.traineddata")
             if (!trainedDataFile.exists()) {
                 context.assets.open("tessdata/eng.traineddata").use { input ->
@@ -74,14 +74,82 @@ class OCREngine(private val context: Context) {
     }
 
     /**
-     * Đọc tài nguyên người chơi (Gold/Elixir) với nhiều pipeline
+     * NEW: Đọc tài nguyên của BẢN THÂN (góc trên bên phải)
+     * Tự động phát hiện vùng dựa vào tỷ lệ màn hình
      */
-    fun readPlayerResource(
+    fun readPlayerResourcesSmart(screen: Mat): ResourceData {
+        val screenWidth = screen.cols()
+        val screenHeight = screen.rows()
+
+        // Vùng vàng: Góc trên bên phải
+        val goldX = (screenWidth * 0.70).toInt()
+        val goldY = (screenHeight * 0.005).toInt()
+        val goldW = (screenWidth * 0.25).toInt()
+        val goldH = (screenHeight * 0.065).toInt()
+        val goldRegion = Rect(goldX, goldY, goldW, goldH)
+
+        // Vùng dầu: Ngay dưới vàng
+        val elixirX = (screenWidth * 0.68).toInt()
+        val elixirY = (screenHeight * 0.07).toInt()
+        val elixirW = (screenWidth * 0.28).toInt()
+        val elixirH = (screenHeight * 0.045).toInt()
+        val elixirRegion = Rect(elixirX, elixirY, elixirW, elixirH)
+
+        val gold = readResourceFromRegion(screen, goldRegion, false)
+        val elixir = readResourceFromRegion(screen, elixirRegion, false)
+
+        Timber.d("Player resources - Gold: $gold, Elixir: $elixir (Screen: ${screenWidth}x${screenHeight})")
+
+        return ResourceData(gold, elixir)
+    }
+
+    /**
+     * NEW: Đọc tài nguyên ĐỐI THỦ (Available Loot - góc trên bên trái)
+     * Chỉ đọc 2 dòng đầu (Gold và Elixir), bỏ qua Dark Elixir
+     */
+    fun readEnemyResourcesSmart(screen: Mat): ResourceData {
+        val screenWidth = screen.cols()
+        val screenHeight = screen.rows()
+
+        // Vùng vàng (dòng 1)
+        val goldX = (screenWidth * 0.01).toInt()
+        val goldY = (screenHeight * 0.10).toInt()
+        val goldW = (screenWidth * 0.18).toInt()
+        val goldH = (screenHeight * 0.035).toInt()
+        val goldRegion = Rect(goldX, goldY, goldW, goldH)
+
+        // Vùng dầu (dòng 2)
+        val elixirX = (screenWidth * 0.01).toInt()
+        val elixirY = (screenHeight * 0.135).toInt()
+        val elixirW = (screenWidth * 0.18).toInt()
+        val elixirH = (screenHeight * 0.035).toInt()
+        val elixirRegion = Rect(elixirX, elixirY, elixirW, elixirH)
+
+        val gold = readResourceFromRegion(screen, goldRegion, false)
+        val elixir = readResourceFromRegion(screen, elixirRegion, true)
+
+        Timber.d("Enemy resources - Gold: $gold, Elixir: $elixir (Screen: ${screenWidth}x${screenHeight})")
+
+        return ResourceData(gold, elixir)
+    }
+
+    /**
+     * Helper: Đọc tài nguyên từ một vùng cụ thể
+     */
+    private fun readResourceFromRegion(
         screen: Mat,
-        region: org.opencv.core.Rect,
-        isPurpleBackground: Boolean = false
+        region: Rect,
+        isPurpleBackground: Boolean
     ): Int {
         try {
+            // Validate region bounds
+            if (region.x < 0 || region.y < 0 ||
+                region.x + region.width > screen.cols() ||
+                region.y + region.height > screen.rows()) {
+                Timber.w("Invalid region bounds: $region for screen ${screen.cols()}x${screen.rows()}")
+                return 0
+            }
+
             val roi = imageProcessor.cropROI(screen, region)
 
             // Pipeline 1: Original filter
@@ -118,16 +186,94 @@ class OCREngine(private val context: Context) {
             roi.release()
             gray.release()
 
-            // Trả về giá trị xuất hiện nhiều nhất
+            // Trả về giá trị xuất hiện nhiều nhất hoặc giá trị lớn nhất
             return if (candidates.isNotEmpty()) {
-                candidates.groupingBy { it }.eachCount().maxByOrNull { it.value }?.key ?: 0
+                val grouped = candidates.groupingBy { it }.eachCount()
+                val mostFrequent = grouped.maxByOrNull { it.value }?.key
+                val largest = candidates.maxOrNull()
+
+                mostFrequent ?: largest ?: 0
             } else {
                 0
             }
 
         } catch (e: Exception) {
-            Timber.e(e, "Failed to read player resource")
+            Timber.e(e, "Failed to read resource from region")
             return 0
+        }
+    }
+
+    /**
+     * LEGACY: Giữ lại để tương thích với code cũ
+     */
+    fun readPlayerResource(
+        screen: Mat,
+        region: Rect,
+        isPurpleBackground: Boolean = false
+    ): Int {
+        return readResourceFromRegion(screen, region, isPurpleBackground)
+    }
+
+    /**
+     * NEW: Tìm text "Wall" trong menu upgrade
+     * Trả về tọa độ của text nếu tìm thấy
+     */
+    fun findTextInRegion(screen: Mat, searchText: String, searchRegion: Rect? = null): android.graphics.Point? {
+        try {
+            // Nếu không có region cụ thể, tìm trong toàn bộ màn hình
+            val roi = if (searchRegion != null) {
+                imageProcessor.cropROI(screen, searchRegion)
+            } else {
+                screen.clone()
+            }
+
+            // Chuẩn bị ảnh cho OCR text
+            val gray = Mat()
+            org.opencv.imgproc.Imgproc.cvtColor(roi, gray, org.opencv.imgproc.Imgproc.COLOR_BGR2GRAY)
+
+            val processed = Mat()
+            org.opencv.imgproc.Imgproc.threshold(gray, processed, 0.0, 255.0,
+                org.opencv.imgproc.Imgproc.THRESH_BINARY + org.opencv.imgproc.Imgproc.THRESH_OTSU)
+
+            // Cho phép nhận diện chữ
+            tessBaseAPI?.setVariable(TessBaseAPI.VAR_CHAR_WHITELIST, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz")
+            tessBaseAPI?.pageSegMode = TessBaseAPI.PageSegMode.PSM_AUTO
+
+            val bitmap = imageProcessor.matToBitmap(processed)
+            tessBaseAPI?.setImage(bitmap)
+
+            val detectedText = tessBaseAPI?.utF8Text ?: ""
+
+            // Restore settings về nhận diện số
+            tessBaseAPI?.setVariable(TessBaseAPI.VAR_CHAR_WHITELIST, "0123456789")
+            tessBaseAPI?.pageSegMode = TessBaseAPI.PageSegMode.PSM_SINGLE_LINE
+
+            roi.release()
+            gray.release()
+            processed.release()
+
+            // Kiểm tra xem có chứa text cần tìm không (case-insensitive)
+            if (detectedText.contains(searchText, ignoreCase = true)) {
+                // Trả về tọa độ trung tâm của region
+                val centerX = if (searchRegion != null) {
+                    searchRegion.x + searchRegion.width / 2
+                } else {
+                    screen.cols() / 2
+                }
+                val centerY = if (searchRegion != null) {
+                    searchRegion.y + searchRegion.height / 2
+                } else {
+                    screen.rows() / 2
+                }
+
+                Timber.d("Found text '$searchText' at ($centerX, $centerY)")
+                return android.graphics.Point(centerX, centerY)
+            }
+
+            return null
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to find text in region")
+            return null
         }
     }
 
@@ -157,7 +303,6 @@ class OCREngine(private val context: Context) {
             if (value2 > 0) candidates.add(value2)
             processed2.release()
 
-            // Lọc giá hợp lệ
             val validPrices = candidates.filter { it in allowedPrices }
 
             return if (validPrices.isNotEmpty()) {
@@ -178,3 +323,8 @@ class OCREngine(private val context: Context) {
         tessBaseAPI = null
     }
 }
+
+/**
+ * Data class cho tài nguyên
+ */
+data class ResourceData(val gold: Int, val elixir: Int)

@@ -11,10 +11,6 @@ import timber.log.Timber
  */
 class ImageProcessor {
 
-    companion object {
-
-    }
-
     /**
      * Chuyển đổi từ hàm _prep_white_text của Python
      * Lọc text trắng trên nền màu (cho Gold/Elixir người chơi)
